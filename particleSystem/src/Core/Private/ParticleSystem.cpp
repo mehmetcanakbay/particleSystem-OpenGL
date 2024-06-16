@@ -1,5 +1,6 @@
 #include "Public/ParticleSystem.h"
 #include <iostream>
+
 void ParticleSystem::CreateQuadsFromPositions() {
 	//*12 for positions, but now add colors
 	//so thats 4 more. in total it should be 28 7*4
@@ -104,6 +105,27 @@ ParticleSystem::~ParticleSystem()
 	delete[] particlePool;
 }
 
+void ParticleSystem::ThreadJob(int start, int end) {
+	glm::vec3 scaledQuadSource[4];
+
+	for (int i = 0; i < 4; i++) {
+		scaledQuadSource[i] = quadSource[i] * m_particleSize;
+	}
+
+	//this saps quite a lot from FPS
+	for (int i = start; i < end; i++) {
+		int currCount = i * 4; //for every quad, there are 4 vertexes.
+
+		glm::vec3 currPos = particlePool[i].ReturnPosition();
+		glm::vec4 currCol = particlePool[i].ReturnColor();
+
+		for (int j = 0; j < 4; j++) {
+			quadVertexes[currCount + j].position = currPos + scaledQuadSource[j];
+			quadVertexes[currCount + j].color = currCol;
+		}
+	}
+}
+
 
 //////////////////////////////////////RENDERER
 ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
@@ -133,6 +155,21 @@ ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * particleSystem->GetCount() * sizeof(unsigned int), particleSystem->GetQuadIndices(), GL_DYNAMIC_DRAW);
 
 	Unbind();
+
+	numThreads = 4;
+	threadChunks = partSystemRef->GetCount() / numThreads;
+	/*
+	for (int i = 0; i < numThreads; ++i) {
+		int start = i * threadChunks;
+		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
+
+		threads[i] = std::thread(&ParticleSystem::ThreadJob, partSystemRef, start, end);
+	}
+
+	for (std::thread& thread : threads) {
+		thread.join();
+	}
+	*/
 }
 
 ParticleSystemRenderer::~ParticleSystemRenderer()
@@ -157,8 +194,14 @@ void ParticleSystemRenderer::Unbind()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+
 void ParticleSystemRenderer::Render()
 {
+
+	//for (std::thread& thread : threads) {
+	//	thread.join();
+	//}
+
 	//partSystemRef->CreateQuadsFromPositions();
 	glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(Vertex) * partSystemRef->GetCount(), partSystemRef->GetQuadVertexes());
 	glDrawElements(GL_TRIANGLES, partSystemRef->GetCount() * 6, GL_UNSIGNED_INT, NULL);

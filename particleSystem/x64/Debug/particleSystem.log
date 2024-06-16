@@ -1,5 +1,1 @@
-﻿  ParticleSystem.cpp
-F:\VSRepos\particleSystem\particleSystem\src\Core\Private\ParticleSystem.cpp(23,20): warning C4018: '<': signed/unsigned mismatch
-F:\VSRepos\particleSystem\particleSystem\src\Core\Private\ParticleSystem.cpp(39,20): warning C4018: '<': signed/unsigned mismatch
-F:\VSRepos\particleSystem\particleSystem\src\Core\Private\ParticleSystem.cpp(81,20): warning C4018: '<': signed/unsigned mismatch
-  particleSystem.vcxproj -> F:\VSRepos\particleSystem\x64\Debug\particleSystem.exe
+﻿  particleSystem.vcxproj -> F:\VSRepos\particleSystem\x64\Debug\particleSystem.exe

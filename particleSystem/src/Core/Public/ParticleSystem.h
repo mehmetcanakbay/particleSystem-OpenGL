@@ -2,6 +2,7 @@
 #include "Public/Renderer.h"
 #include "Public/Vertex.h"
 #include "Public/Particle.h"
+#include <thread>
 
 class ParticleSystem {
 private:
@@ -33,7 +34,7 @@ private:
 
 	//VertexFactory factory;
 	//void ApplyVelocity();
-
+	
 public:
 	ParticleSystem(unsigned int count, float particleSize);
 	~ParticleSystem();
@@ -44,6 +45,7 @@ public:
 	void CreateIndices();
 
 	void Tick(float deltaTime);
+	void ThreadJob(int start, int end);
 
 	inline Vertex* GetQuadVertexes() const { return quadVertexes; }
 	inline uint32_t* GetQuadIndices() const { return quadIndices; }
@@ -57,6 +59,10 @@ private:
 	unsigned int indexBuffer_id;
 
 	ParticleSystem* partSystemRef;
+
+	int threadChunks;
+	int numThreads;
+	std::thread threads[4];
 public:
 	ParticleSystemRenderer(ParticleSystem* particleSystem);
 	~ParticleSystemRenderer();

@@ -68,8 +68,8 @@ int main() {
 		float deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
-		particleSystem.Tick(deltaTime);
-		//particleSystem.UpdateParticlePositions(deltaTime);
+		//particleSystem.Tick(deltaTime);
+		particleSystem.UpdateParticlePositions(deltaTime);
 		particleRenderer.Render();
 
 		while (GLenum enumout = glGetError()) {
