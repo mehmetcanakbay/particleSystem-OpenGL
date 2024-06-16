@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include "Public/Renderer.h"
+#include <iostream>
 
 ShaderSourceHolder Shader::ParseShader(const std::string& shaderFilePath)
 {
@@ -51,6 +52,23 @@ unsigned int Shader::CompileShader(ShaderSourceHolder& source)
 	glValidateProgram(program);
 	glDeleteShader(vertex_id);
 	glDeleteShader(frag_id);
+
+	GLint linked;
+	glGetProgramiv(program, GL_LINK_STATUS, &linked);
+	if (!linked) {
+		std::cout << "Not linkedd" << std::endl;
+		GLint infoLen = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLen);
+		if (infoLen > 1) {
+			char infoLog[500];
+			glGetProgramInfoLog(program, infoLen, nullptr, infoLog);
+			std::cout << infoLog<<std::endl;
+			// Handle shader compilation or linking errors here
+		}
+		// Delete shader program if not linked successfully
+		glDeleteProgram(program);
+		program = 0; // Set to 0 or an invalid ID
+	}
 
 	glUseProgram(0);
 

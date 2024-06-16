@@ -39,9 +39,11 @@ public:
 	~ParticleSystem();
 
 	inline unsigned int GetCount() const { return m_Count; }
-	void UpdateParticlePositions();
+	void UpdateParticlePositions(float deltaTime);
 	void CreateQuadsFromPositions();
 	void CreateIndices();
+
+	void Tick(float deltaTime);
 
 	inline Vertex* GetQuadVertexes() const { return quadVertexes; }
 	inline uint32_t* GetQuadIndices() const { return quadIndices; }
