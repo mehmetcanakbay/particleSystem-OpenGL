@@ -2,8 +2,12 @@
 #version 330 core
 
 layout(location=0) in vec4 position;
+layout(location=1) in vec4 color;
+
+out vec4 m_Color;
 
 void main(){
+	m_Color = color;
 	gl_Position = position;
 };
 
@@ -13,6 +17,8 @@ void main(){
 
 layout(location=0) out vec4 color;
 
+in vec4 m_Color;
+
 void main(){
-	color = vec4(1.0);
+	color = m_Color;
 };

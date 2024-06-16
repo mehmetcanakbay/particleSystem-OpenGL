@@ -45,7 +45,7 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
-	ParticleSystem particleSystem(1500, 0.005f);
+	ParticleSystem particleSystem(1000, 0.007f);
 	ParticleSystemRenderer particleRenderer(&particleSystem);
 	particleRenderer.Bind();
 

@@ -22,8 +22,8 @@ public:
 
     void UpdateParticle();
     
-    inline const glm::vec3 ReturnPosition() const { return vertexInfo.position; }
-    inline const glm::vec4 ReturnColor() { return vertexInfo.color; }
+    inline glm::vec3 ReturnPosition() const { return vertexInfo.position; }
+    inline glm::vec4 ReturnColor() const { return vertexInfo.color; }
 
     inline const glm::vec3 ReturnVelocity() { return velocity; }
 };

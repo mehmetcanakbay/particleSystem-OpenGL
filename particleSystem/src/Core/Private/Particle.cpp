@@ -4,6 +4,9 @@
 Particle::Particle(const Vertex& vertex)
 	:vertexInfo(vertex)
 {
+	vertexInfo.color = glm::vec4(glm::linearRand(0.f, 1.0f), glm::linearRand(0.f, 1.0f), 
+		glm::linearRand(0.f, 1.0f), 1.0f);
+
 	velocity = glm::vec3(glm::linearRand(-1.0f, 1.0f), glm::linearRand(-1.0f, 1.0f), 0.0f);
 	velocity = velocity * (1/glm::length(velocity));
 	velocity = velocity * glm::linearRand(0.0f, 5.0f);

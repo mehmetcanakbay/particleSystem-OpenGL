@@ -5,6 +5,7 @@
 
 //since struct makes mem adresses sequential, this will work
 struct Vertex {
+public:
     glm::vec3 position;
     glm::vec4 color;
 

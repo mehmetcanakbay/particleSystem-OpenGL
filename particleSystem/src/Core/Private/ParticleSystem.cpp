@@ -1,13 +1,47 @@
 #include "Public/ParticleSystem.h"
-
+#include <iostream>
 void ParticleSystem::CreateQuadsFromPositions() {
 	int vertexIndex = -1;
+	/*
 	for (int i = 0; i < m_Count * 12; i++) {
 		if (i % 12 == 0) vertexIndex += 1;
 		//for every small position (like -0.5f)
 		//get the correct vertex position to add from vertexes and then add the quad pos there
 		quadPositions[i] = particlePool[vertexIndex].ReturnPosition()[i % 3] +
 			(quadSource[i % 12] * m_particleSize);
+	}
+	*/
+	//*12 for positions, but now add colors
+	//so thats 4 more. in total it should be 28 7*4
+	
+	//ok this was not very smart. this wont work because
+	//first im filling with pos then color. that wont work.
+	//its 3 positions, then 4 colors.
+	/*
+	for (int i = 0; i < m_Count; i ++) {
+		int currCount = i * 28;
+		//12 of this is vertexes.
+		for (int j = 0; j < 12; j++) {
+			quadPositions[currCount+j] = particlePool[i].ReturnPosition()[j % 3] +
+				(quadSource[j % 12] * m_particleSize);
+		}
+
+		for (int j = 12; j < 28; j++) {
+			quadPositions[currCount + j] = particlePool[i].ReturnColor()[j % 4];
+		}
+	}
+	*/
+
+	//glm::vec3 currPosition;
+	//glm::vec4 currColor;
+	for (int i = 0; i < m_Count; i++) {
+		int currCount = i * 4;
+		for (int j = 0; j < 4; j++) {
+			quadVertexes[currCount+j] = Vertex(
+				glm::vec3(particlePool[i].ReturnPosition()+quadSource[j]*m_particleSize),
+				particlePool[i].ReturnColor()
+			);
+		}
 	}
 }
 
@@ -52,7 +86,7 @@ void ParticleSystem::CreateIndices()
 ParticleSystem::ParticleSystem(unsigned int count, float particleSize)
 :m_Count(count), m_particleSize(particleSize) {
 	
-	quadPositions = new float[12 * m_Count];
+	quadVertexes = new Vertex[4 * m_Count];
 	quadIndices = new uint32_t[6 * m_Count];
 	particlePool = new Particle[m_Count];
 
@@ -62,7 +96,7 @@ ParticleSystem::ParticleSystem(unsigned int count, float particleSize)
 
 ParticleSystem::~ParticleSystem()
 {
-	delete[] quadPositions;
+	delete[] quadVertexes;
 	delete[] quadIndices;
 	delete[] particlePool;
 }
@@ -72,20 +106,23 @@ ParticleSystem::~ParticleSystem()
 ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
 	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem)
 {
+	particleSystem->CreateQuadsFromPositions();
+	particleSystem->CreateIndices();
+
+	glGenVertexArrays(1, &vertexArray_id);
+	glBindVertexArray(vertexArray_id);
 	//VERTEX BUFFER
 	glGenBuffers(1, &vertexBuffer_id);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
-	glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float) * particleSystem->GetCount(), particleSystem->GetQuadPositions(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 28 * sizeof(float) * particleSystem->GetCount(), particleSystem->GetQuadVertexes(), GL_DYNAMIC_DRAW);
 
 	//VERTEX ARRAY
-	glGenVertexArrays(1, &vertexArray_id);
-	glBindVertexArray(vertexArray_id);
-	glEnableVertexAttribArray(0);
 	//position first
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
 	//color
-	//glEnableVertexAttribArray(1);
-	//glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (const void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3*sizeof(float)));
 
 	//INDEX BUFFER
 	glGenBuffers(1, &indexBuffer_id);
@@ -105,9 +142,9 @@ ParticleSystemRenderer::~ParticleSystemRenderer()
 
 void ParticleSystemRenderer::Bind()
 {
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer_id);
 	glBindVertexArray(vertexArray_id);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer_id);
 }
 
 void ParticleSystemRenderer::Unbind()
@@ -120,6 +157,6 @@ void ParticleSystemRenderer::Unbind()
 void ParticleSystemRenderer::Render()
 {
 	partSystemRef->CreateQuadsFromPositions();
-	glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(float) * partSystemRef->GetCount(), partSystemRef->GetQuadPositions());
-	glDrawElements(GL_TRIANGLES, partSystemRef->GetCount() * 6, GL_UNSIGNED_INT, nullptr);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, 28 * sizeof(float) * partSystemRef->GetCount(), partSystemRef->GetQuadVertexes());
+	glDrawElements(GL_TRIANGLES, partSystemRef->GetCount() * 6, GL_UNSIGNED_INT, NULL);
 }

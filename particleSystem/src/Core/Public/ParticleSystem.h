@@ -7,14 +7,22 @@ class ParticleSystem {
 private:
 	unsigned int m_Count;
 	float m_particleSize;
-	float* quadPositions; //lets initialize this later
+	Vertex* quadVertexes; //lets initialize this later
 	uint32_t* quadIndices;
 
+	/*
 	const float quadSource[12] = {
 		-0.5f, -0.5f, 0.0f,
 		 0.5f, -0.5f, 0.0f,
 		 0.5f,  0.5f, 0.0f,
 		-0.5f,  0.5f, 0.0f
+	};
+	*/
+	const glm::vec3 quadSource[4] = {
+		{-0.5f, -0.5f, 0.0f},
+		{0.5f, -0.5f, 0.0f},
+		{0.5f, 0.5f, 0.0f},
+		{-0.5f, 0.5f, 0.0f}
 	};
 
 	const uint32_t quadIndicesSource[6] = {
@@ -26,7 +34,6 @@ private:
 	//VertexFactory factory;
 	//void ApplyVelocity();
 
-	void CreateIndices();
 public:
 	ParticleSystem(unsigned int count, float particleSize);
 	~ParticleSystem();
@@ -34,8 +41,9 @@ public:
 	inline unsigned int GetCount() const { return m_Count; }
 	void UpdateParticlePositions();
 	void CreateQuadsFromPositions();
+	void CreateIndices();
 
-	inline float* GetQuadPositions() const { return quadPositions; }
+	inline Vertex* GetQuadVertexes() const { return quadVertexes; }
 	inline uint32_t* GetQuadIndices() const { return quadIndices; }
 };
 
