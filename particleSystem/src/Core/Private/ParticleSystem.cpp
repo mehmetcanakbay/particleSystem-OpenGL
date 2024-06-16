@@ -124,6 +124,8 @@ void ParticleSystem::ThreadJob(int start, int end) {
 			quadVertexes[currCount + j].color = currCol;
 		}
 	}
+
+
 }
 
 
@@ -158,18 +160,9 @@ ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
 
 	numThreads = 4;
 	threadChunks = partSystemRef->GetCount() / numThreads;
-	/*
-	for (int i = 0; i < numThreads; ++i) {
-		int start = i * threadChunks;
-		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
+	
 
-		threads[i] = std::thread(&ParticleSystem::ThreadJob, partSystemRef, start, end);
-	}
 
-	for (std::thread& thread : threads) {
-		thread.join();
-	}
-	*/
 }
 
 ParticleSystemRenderer::~ParticleSystemRenderer()
@@ -197,10 +190,17 @@ void ParticleSystemRenderer::Unbind()
 
 void ParticleSystemRenderer::Render()
 {
+	for (int i = 0; i < numThreads; ++i) {
+		int start = i * threadChunks;
+		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
 
-	//for (std::thread& thread : threads) {
-	//	thread.join();
-	//}
+		threads[i] = std::thread(&ParticleSystem::ThreadJob, partSystemRef, start, end);
+	}
+	for (std::thread& thread : threads) {
+		if (thread.joinable()) {
+			thread.join();
+		}
+	}
 
 	//partSystemRef->CreateQuadsFromPositions();
 	glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(Vertex) * partSystemRef->GetCount(), partSystemRef->GetQuadVertexes());
