@@ -3,6 +3,7 @@
 #include "Public/Vertex.h"
 #include "Public/Particle.h"
 #include <thread>
+#include "Public/ThreadPool.hpp"
 
 class ParticleSystem {
 private:
@@ -63,6 +64,8 @@ private:
 	int threadChunks;
 	int numThreads;
 	std::thread threads[8];
+
+	ThreadPool pool;
 public:
 	ParticleSystemRenderer(ParticleSystem* particleSystem);
 	~ParticleSystemRenderer();

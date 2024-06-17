@@ -144,6 +144,7 @@
     <ClInclude Include="src\Core\Public\ParticleSystem.h" />
     <ClInclude Include="src\Core\Public\Renderer.h" />
     <ClInclude Include="src\Core\Public\Shader.h" />
+    <ClInclude Include="src\Core\Public\ThreadPool.hpp" />
     <ClInclude Include="src\Core\Public\Vertex.h" />
     <ClInclude Include="src\vendor\glm\common.hpp" />
     <ClInclude Include="src\vendor\glm\detail\compute_common.hpp" />

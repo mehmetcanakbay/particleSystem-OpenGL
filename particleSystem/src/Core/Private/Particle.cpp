@@ -22,14 +22,14 @@ Particle::Particle(const Vertex& vertex)
 void Particle::UpdateParticle(float deltaTime)
 {
 	vertexInfo.position = vertexInfo.position + velocity*deltaTime;
-	velocity *= velocityDampValue * 0.999f;
-	glm::vec3 diff = vertexInfo.position - prevLoc;
-	
-	//lifetime
+	//velocity *= velocityDampValue * 0.999f;
+	//glm::vec3 diff = vertexInfo.position - prevLoc;
+	//
+	////lifetime
 	particleLifetime = glm::max(0.0f, particleLifetime - deltaTime);
 
 	vertexInfo.color = glm::vec4(vertexInfo.color.x, vertexInfo.color.y, vertexInfo.color.z, particleLifetime / maxLifetime);
-	//std::cout << diff.x <<" "<< diff.y << " " << diff.z << std::endl;
-	prevLoc = vertexInfo.position;
+	////std::cout << diff.x <<" "<< diff.y << " " << diff.z << std::endl;
+	//prevLoc = vertexInfo.position;
 }
 

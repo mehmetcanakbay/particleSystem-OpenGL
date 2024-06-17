@@ -125,14 +125,12 @@ void ParticleSystem::ThreadJob(int start, int end, float deltaTime) {
 			quadVertexes[currCount + j].color = currCol;
 		}
 	}
-
-
 }
 
 
 //////////////////////////////////////RENDERER
-ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
-	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem)
+ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
+	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), numThreads(6), pool(numThreads)
 {
 	particleSystem->CreateQuadsFromPositions();
 	particleSystem->CreateIndices();
@@ -158,11 +156,7 @@ ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * particleSystem->GetCount() * sizeof(unsigned int), particleSystem->GetQuadIndices(), GL_DYNAMIC_DRAW);
 
 	Unbind();
-
-	numThreads = 8;
 	threadChunks = partSystemRef->GetCount() / numThreads;
-	
-
 
 }
 
@@ -172,6 +166,7 @@ ParticleSystemRenderer::~ParticleSystemRenderer()
 	glDeleteBuffers(1, &indexBuffer_id);
 	glDeleteBuffers(1, &vertexBuffer_id);
 	glDeleteVertexArrays(1, &vertexArray_id);
+	pool.stop();
 }
 
 void ParticleSystemRenderer::Bind()
@@ -195,13 +190,7 @@ void ParticleSystemRenderer::Render(float deltaTime)
 		int start = i * threadChunks;
 		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
 
-		threads[i] = std::thread(&ParticleSystem::ThreadJob, partSystemRef, start, end, deltaTime);
-	}
-
-	for (std::thread& thread : threads) {
-		if (thread.joinable()) {
-			thread.join();
-		}
+		pool.addTask(&ParticleSystem::ThreadJob, partSystemRef, start, end, deltaTime);
 	}
 
 	//partSystemRef->CreateQuadsFromPositions();
