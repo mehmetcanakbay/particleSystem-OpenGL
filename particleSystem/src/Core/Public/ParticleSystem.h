@@ -45,7 +45,7 @@ public:
 	void CreateIndices();
 
 	void Tick(float deltaTime);
-	void ThreadJob(int start, int end);
+	void ThreadJob(int start, int end, float deltaTime);
 
 	inline Vertex* GetQuadVertexes() const { return quadVertexes; }
 	inline uint32_t* GetQuadIndices() const { return quadIndices; }
@@ -62,7 +62,7 @@ private:
 
 	int threadChunks;
 	int numThreads;
-	std::thread threads[4];
+	std::thread threads[8];
 public:
 	ParticleSystemRenderer(ParticleSystem* particleSystem);
 	~ParticleSystemRenderer();
@@ -70,5 +70,5 @@ public:
 	void Bind();
 	void Unbind();
 
-	void Render();
+	void Render(float deltaTime);
 };

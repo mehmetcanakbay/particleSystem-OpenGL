@@ -105,7 +105,7 @@ ParticleSystem::~ParticleSystem()
 	delete[] particlePool;
 }
 
-void ParticleSystem::ThreadJob(int start, int end) {
+void ParticleSystem::ThreadJob(int start, int end, float deltaTime) {
 	glm::vec3 scaledQuadSource[4];
 
 	for (int i = 0; i < 4; i++) {
@@ -115,6 +115,7 @@ void ParticleSystem::ThreadJob(int start, int end) {
 	//this saps quite a lot from FPS
 	for (int i = start; i < end; i++) {
 		int currCount = i * 4; //for every quad, there are 4 vertexes.
+		particlePool[i].UpdateParticle(deltaTime);
 
 		glm::vec3 currPos = particlePool[i].ReturnPosition();
 		glm::vec4 currCol = particlePool[i].ReturnColor();
@@ -158,7 +159,7 @@ ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
 
 	Unbind();
 
-	numThreads = 4;
+	numThreads = 8;
 	threadChunks = partSystemRef->GetCount() / numThreads;
 	
 
@@ -188,14 +189,15 @@ void ParticleSystemRenderer::Unbind()
 }
 
 
-void ParticleSystemRenderer::Render()
+void ParticleSystemRenderer::Render(float deltaTime)
 {
 	for (int i = 0; i < numThreads; ++i) {
 		int start = i * threadChunks;
 		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
 
-		threads[i] = std::thread(&ParticleSystem::ThreadJob, partSystemRef, start, end);
+		threads[i] = std::thread(&ParticleSystem::ThreadJob, partSystemRef, start, end, deltaTime);
 	}
+
 	for (std::thread& thread : threads) {
 		if (thread.joinable()) {
 			thread.join();
