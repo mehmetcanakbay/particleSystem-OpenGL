@@ -49,7 +49,6 @@ int main() {
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
 	ParticleSystem particleSystem(1000000, 0.005f);
-	ParticleSystem particleSystem(1000000, 0.005f);
 	ParticleSystemRenderer particleRenderer(&particleSystem);
 	particleRenderer.Bind();
 
@@ -61,8 +60,6 @@ int main() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	float prevFrameTime = -1.0f;
-	std::this_thread::sleep_for(std::chrono::milliseconds(0));
-
 
 	while (!glfwWindowShouldClose(window)) {
 		if (prevFrameTime == -1.0f) {//if not initialized

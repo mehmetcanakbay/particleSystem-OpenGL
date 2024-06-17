@@ -130,7 +130,7 @@ void ParticleSystem::ThreadJob(int start, int end, float deltaTime) {
 
 //////////////////////////////////////RENDERER
 ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
-	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), numThreads(6), pool(numThreads)
+	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), numThreads(8), pool(numThreads)
 {
 	particleSystem->CreateQuadsFromPositions();
 	particleSystem->CreateIndices();
