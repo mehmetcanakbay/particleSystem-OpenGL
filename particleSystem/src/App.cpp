@@ -45,7 +45,7 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
-	ParticleSystem particleSystem(200000, 0.005f);
+	ParticleSystem particleSystem(250000, 0.005f);
 	ParticleSystemRenderer particleRenderer(&particleSystem);
 	particleRenderer.Bind();
 
@@ -68,8 +68,8 @@ int main() {
 		float deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
-		particleSystem.Tick(deltaTime);
-		//particleSystem.UpdateParticlePositions(deltaTime);
+		//particleSystem.Tick(deltaTime);
+		particleSystem.UpdateParticlePositions(deltaTime);
 		particleRenderer.Render();
 
 		while (GLenum enumout = glGetError()) {

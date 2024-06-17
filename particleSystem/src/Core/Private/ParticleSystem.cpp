@@ -159,7 +159,7 @@ void ParticleSystemRenderer::Unbind()
 
 void ParticleSystemRenderer::Render()
 {
-	//partSystemRef->CreateQuadsFromPositions();
+	partSystemRef->CreateQuadsFromPositions();
 	glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(Vertex) * partSystemRef->GetCount(), partSystemRef->GetQuadVertexes());
 	glDrawElements(GL_TRIANGLES, partSystemRef->GetCount() * 6, GL_UNSIGNED_INT, NULL);
 }
