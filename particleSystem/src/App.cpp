@@ -59,6 +59,9 @@ int main() {
 	float prevFrameTime = 0.0f;
 	
 	while (!glfwWindowShouldClose(window)) {
+		if (prevFrameTime == -1.0f) {//if not initialized
+			prevFrameTime = (float)glfwGetTime() - 0.000000005f; // make it a very small value
+		}
 		glClear(GL_COLOR_BUFFER_BIT);
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -78,7 +81,7 @@ int main() {
 
 		{
 			ImGui::Begin("Debug");
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", deltaTime, io.Framerate);
 			ImGui::End();
 		}
 
