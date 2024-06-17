@@ -1,5 +1,6 @@
 #include "Public/ParticleSystem.h"
 #include <iostream>
+
 void ParticleSystem::CreateQuadsFromPositions() {
 	//*12 for positions, but now add colors
 	//so thats 4 more. in total it should be 28 7*4
@@ -104,10 +105,32 @@ ParticleSystem::~ParticleSystem()
 	delete[] particlePool;
 }
 
+void ParticleSystem::ThreadJob(int start, int end, float deltaTime) {
+	glm::vec3 scaledQuadSource[4];
+
+	for (int i = 0; i < 4; i++) {
+		scaledQuadSource[i] = quadSource[i] * m_particleSize;
+	}
+
+	//this saps quite a lot from FPS
+	for (int i = start; i < end; i++) {
+		int currCount = i * 4; //for every quad, there are 4 vertexes.
+		particlePool[i].UpdateParticle(deltaTime);
+
+		glm::vec3 currPos = particlePool[i].ReturnPosition();
+		glm::vec4 currCol = particlePool[i].ReturnColor();
+
+		for (int j = 0; j < 4; j++) {
+			quadVertexes[currCount + j].position = currPos + scaledQuadSource[j];
+			quadVertexes[currCount + j].color = currCol;
+		}
+	}
+}
+
 
 //////////////////////////////////////RENDERER
-ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
-	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem)
+ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
+	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), numThreads(6), pool(numThreads)
 {
 	particleSystem->CreateQuadsFromPositions();
 	particleSystem->CreateIndices();
@@ -133,6 +156,8 @@ ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem):
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * particleSystem->GetCount() * sizeof(unsigned int), particleSystem->GetQuadIndices(), GL_DYNAMIC_DRAW);
 
 	Unbind();
+	threadChunks = partSystemRef->GetCount() / numThreads;
+
 }
 
 ParticleSystemRenderer::~ParticleSystemRenderer()
@@ -141,6 +166,7 @@ ParticleSystemRenderer::~ParticleSystemRenderer()
 	glDeleteBuffers(1, &indexBuffer_id);
 	glDeleteBuffers(1, &vertexBuffer_id);
 	glDeleteVertexArrays(1, &vertexArray_id);
+	pool.stop();
 }
 
 void ParticleSystemRenderer::Bind()
@@ -157,9 +183,21 @@ void ParticleSystemRenderer::Unbind()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void ParticleSystemRenderer::Render()
+
+void ParticleSystemRenderer::Render(float deltaTime)
 {
+<<<<<<< HEAD
 	partSystemRef->CreateQuadsFromPositions();
+=======
+	for (int i = 0; i < numThreads; ++i) {
+		int start = i * threadChunks;
+		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
+
+		pool.addTask(&ParticleSystem::ThreadJob, partSystemRef, start, end, deltaTime);
+	}
+
+	//partSystemRef->CreateQuadsFromPositions();
+>>>>>>> thread
 	glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(Vertex) * partSystemRef->GetCount(), partSystemRef->GetQuadVertexes());
 	glDrawElements(GL_TRIANGLES, partSystemRef->GetCount() * 6, GL_UNSIGNED_INT, NULL);
 }

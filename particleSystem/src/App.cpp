@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <iostream>
 #include <string>
+#include <chrono>
+#include <thread>
+
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -46,6 +49,7 @@ int main() {
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
 	ParticleSystem particleSystem(1000000, 0.005f);
+	ParticleSystem particleSystem(1000000, 0.005f);
 	ParticleSystemRenderer particleRenderer(&particleSystem);
 	particleRenderer.Bind();
 
@@ -56,11 +60,14 @@ int main() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	float prevFrameTime = 0.0f;
-	
+	float prevFrameTime = -1.0f;
+	std::this_thread::sleep_for(std::chrono::milliseconds(0));
+
+
 	while (!glfwWindowShouldClose(window)) {
 		if (prevFrameTime == -1.0f) {//if not initialized
-			prevFrameTime = (float)glfwGetTime() - 0.000000005f; // make it a very small value
+			prevFrameTime = (float)glfwGetTime()-0.000000005f; // make it a very small value
+
 		}
 		glClear(GL_COLOR_BUFFER_BIT);
 		ImGui_ImplOpenGL3_NewFrame();
@@ -72,8 +79,8 @@ int main() {
 		prevFrameTime = time;
 
 		//particleSystem.Tick(deltaTime);
-		particleSystem.UpdateParticlePositions(deltaTime);
-		particleRenderer.Render();
+		//particleSystem.UpdateParticlePositions(deltaTime);
+		particleRenderer.Render(deltaTime);
 
 		while (GLenum enumout = glGetError()) {
 			std::cout <<"ERROR RENDER: " << enumout << std::endl;
@@ -81,7 +88,7 @@ int main() {
 
 		{
 			ImGui::Begin("Debug");
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", deltaTime, io.Framerate);
+			ImGui::Text("FPS: %.3f, deltaTime: %.6f", (1 / deltaTime), deltaTime);
 			ImGui::End();
 		}
 

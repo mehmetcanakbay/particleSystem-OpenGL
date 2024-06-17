@@ -9,7 +9,7 @@ public:
     glm::vec3 position;
     glm::vec4 color;
 
-    Vertex(const glm::vec3& pos=glm::vec3(0.0f), const glm::vec4 col=glm::vec4(1.0f)) {
+    Vertex(const glm::vec3& pos=glm::vec3(0.0f), const glm::vec4& col=glm::vec4(1.0f)) {
         position = pos;
         color = col;
     }
