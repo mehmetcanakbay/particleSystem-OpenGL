@@ -186,9 +186,6 @@ void ParticleSystemRenderer::Unbind()
 
 void ParticleSystemRenderer::Render(float deltaTime)
 {
-<<<<<<< HEAD
-	partSystemRef->CreateQuadsFromPositions();
-=======
 	for (int i = 0; i < numThreads; ++i) {
 		int start = i * threadChunks;
 		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
@@ -197,7 +194,6 @@ void ParticleSystemRenderer::Render(float deltaTime)
 	}
 
 	//partSystemRef->CreateQuadsFromPositions();
->>>>>>> thread
 	glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(Vertex) * partSystemRef->GetCount(), partSystemRef->GetQuadVertexes());
 	glDrawElements(GL_TRIANGLES, partSystemRef->GetCount() * 6, GL_UNSIGNED_INT, NULL);
 }
