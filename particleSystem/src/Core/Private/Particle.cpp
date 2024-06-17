@@ -2,7 +2,7 @@
 #include <iostream>
 
 Particle::Particle(const Vertex& vertex)
-	:vertexInfo(vertex), particleLifetime(5.0f)
+	:vertexInfo(vertex), particleLifetime(3.0f)
 {
 	vertexInfo.position = glm::vec3(glm::linearRand(-0.1f, 0.1f), glm::linearRand(-0.1f, 0.1f), 0.0f);
 	vertexInfo.color = glm::vec4(glm::linearRand(0.f, 1.0f), glm::linearRand(0.f, 1.0f), 
@@ -22,13 +22,13 @@ Particle::Particle(const Vertex& vertex)
 void Particle::UpdateParticle(float deltaTime)
 {
 	vertexInfo.position = vertexInfo.position + velocity*deltaTime;
-	//velocity *= velocityDampValue * 0.999f;
+	velocity *= velocityDampValue * 0.999f;
 	//glm::vec3 diff = vertexInfo.position - prevLoc;
 	//
 	////lifetime
 	particleLifetime = glm::max(0.0f, particleLifetime - deltaTime);
 
-	vertexInfo.color = glm::vec4(vertexInfo.color.x, vertexInfo.color.y, vertexInfo.color.z, particleLifetime / maxLifetime);
+	//vertexInfo.color = glm::vec4(vertexInfo.color.x, vertexInfo.color.y, vertexInfo.color.z, particleLifetime / maxLifetime);
 	////std::cout << diff.x <<" "<< diff.y << " " << diff.z << std::endl;
 	//prevLoc = vertexInfo.position;
 }

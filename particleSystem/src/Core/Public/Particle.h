@@ -28,6 +28,8 @@ public:
     inline glm::vec3 ReturnPosition() const { return vertexInfo.position; }
     inline glm::vec4 ReturnColor() const { return vertexInfo.color; }
     inline float ReturnLifetime() const { return particleLifetime; }
+    inline float ReturnMaxLifetime() const { return maxLifetime; }
+    inline float ReturnAlpha() const { return particleLifetime/maxLifetime; }
 
     inline const glm::vec3 ReturnVelocity() { return velocity; }
 };

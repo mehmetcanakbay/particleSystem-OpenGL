@@ -20,7 +20,7 @@ public:
 	void UpdateParticles(float deltaTime);
 	glm::vec4* posLifetimeArray;
 
-	void ThreadJob(int start, int end, float deltaTime);
+	void ThreadJob(int start, int end, float deltaTime, float* mappedData);
 };
 
 class ParticleSystemRenderer {
@@ -32,7 +32,11 @@ private:
 
 	unsigned int instancedVertexBuffer_id;
 
+	
+	unsigned int numThreads;
+	unsigned int threadChunks;
 	ThreadPool pool;
+
 
 	ParticleSystem* partSystemRef;
 
