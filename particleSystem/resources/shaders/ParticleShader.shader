@@ -2,13 +2,13 @@
 #version 330 core
 
 layout(location=0) in vec4 position;
-layout(location=1) in vec4 color;
+layout(location=1) in vec4 offsetLifetime;
 
 out vec4 m_Color;
 
 void main() {
-	m_Color = color;
-	gl_Position = position;
+	m_Color = vec4(1.0);
+	gl_Position = vec4(position.x*0.005, position.y*0.005, position.z, 1.0)+vec4(offsetLifetime.x, offsetLifetime.y, offsetLifetime.z, 0.0);
 };
 
 

@@ -9,17 +9,33 @@ class ParticleSystem {
 private:
 	unsigned int m_Count;
 	float m_particleSize;
-	Vertex* quadVertexes; //lets initialize this later
-	uint32_t* quadIndices;
 
-	/*
-	const float quadSource[12] = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.5f,  0.5f, 0.0f,
-		-0.5f,  0.5f, 0.0f
-	};
-	*/
+	Particle* particlePool;
+
+public:
+	ParticleSystem(unsigned int count, float particleSize);
+	~ParticleSystem();
+
+	inline unsigned int GetCount() const { return m_Count; }
+	void UpdateParticles(float deltaTime);
+	glm::vec4* posLifetimeArray;
+
+	void ThreadJob(int start, int end, float deltaTime);
+};
+
+class ParticleSystemRenderer {
+
+private:
+	unsigned int vertexBuffer_id;
+	unsigned int vertexArray_id;
+	unsigned int indexBuffer_id;
+
+	unsigned int instancedVertexBuffer_id;
+
+	ThreadPool pool;
+
+	ParticleSystem* partSystemRef;
+
 	const glm::vec3 quadSource[4] = {
 		{-0.5f, -0.5f, 0.0f},
 		{0.5f, -0.5f, 0.0f},
@@ -31,41 +47,6 @@ private:
 		0, 1, 2, 2, 3, 0
 	};
 
-	Particle* particlePool;
-
-	//VertexFactory factory;
-	//void ApplyVelocity();
-	
-public:
-	ParticleSystem(unsigned int count, float particleSize);
-	~ParticleSystem();
-
-	inline unsigned int GetCount() const { return m_Count; }
-	void UpdateParticlePositions(float deltaTime);
-	void CreateQuadsFromPositions();
-	void CreateIndices();
-
-	void Tick(float deltaTime);
-	void ThreadJob(int start, int end, float deltaTime);
-
-	inline Vertex* GetQuadVertexes() const { return quadVertexes; }
-	inline uint32_t* GetQuadIndices() const { return quadIndices; }
-};
-
-class ParticleSystemRenderer {
-
-private:
-	unsigned int vertexBuffer_id;
-	unsigned int vertexArray_id;
-	unsigned int indexBuffer_id;
-
-	ParticleSystem* partSystemRef;
-
-	int threadChunks;
-	int numThreads;
-	std::thread threads[8];
-
-	ThreadPool pool;
 public:
 	ParticleSystemRenderer(ParticleSystem* particleSystem);
 	~ParticleSystemRenderer();

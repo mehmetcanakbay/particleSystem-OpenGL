@@ -1,163 +1,76 @@
 #include "Public/ParticleSystem.h"
 #include <iostream>
 
-void ParticleSystem::CreateQuadsFromPositions() {
-	//*12 for positions, but now add colors
-	//so thats 4 more. in total it should be 28 7*4
-
-	glm::vec3 scaledQuadSource[4];
-
-	for (int i = 0; i < 4; i++) {
-		scaledQuadSource[i] = quadSource[i] * m_particleSize;
-	}
-
-	//this saps quite a lot from FPS
-	for (int i = 0; i < m_Count; i++) {
-		int currCount = i * 4; //for every quad, there are 4 vertexes.
-
-		glm::vec3 currPos = particlePool[i].ReturnPosition();
-		glm::vec4 currCol = particlePool[i].ReturnColor();
-
-		for (int j = 0; j < 4; j++) {
-			quadVertexes[currCount + j].position = currPos + scaledQuadSource[j];
-			quadVertexes[currCount + j].color = currCol;
-		}
-	}
-}
-
-//I think as a result this may become slower than the apply velocity.
-//TODO: Benchmark both solutions in a new branch.
-void ParticleSystem::UpdateParticlePositions(float deltaTime) {
+void ParticleSystem::UpdateParticles(float deltaTime) {
 	for (int i = 0; i < m_Count; i++) {
 		particlePool[i].UpdateParticle(deltaTime);
+
+		glm::vec3 pos = particlePool[i].ReturnPosition();
+		posLifetimeArray[i].x = pos.x;
+		posLifetimeArray[i].y = pos.y;
+		posLifetimeArray[i].z = pos.z;
+		posLifetimeArray[i].w = particlePool[i].ReturnLifetime();
 	}
 }
 
-//this would work but I dont think its smart to do it this way
-//position should change in the particle, and I should just set the positions in here.
-/*
-void ParticleSystem::ApplyVelocity()
-{
-	int vertexIndex = -1;
-	for (int i = 0; i < m_Count * 12; i++) {
-		if (i % 12 == 0) vertexIndex += 1;
-		quadPositions[i] += particlePool[vertexIndex].ReturnVelocity()[i % 3];
-	}
-}
-*/
-
-void ParticleSystem::CreateIndices()
-{
-	unsigned int fullCycle = 0;
-	for (unsigned int i = 5; i < 6 * m_Count; i += 6) {
-		quadIndices[i - 5] = quadIndicesSource[0] + fullCycle * 4;
-		quadIndices[i - 4] = quadIndicesSource[1] + fullCycle * 4;
-		quadIndices[i - 3] = quadIndicesSource[2] + fullCycle * 4;
-		quadIndices[i - 2] = quadIndicesSource[3] + fullCycle * 4;
-		quadIndices[i - 1] = quadIndicesSource[4] + fullCycle * 4;
-		quadIndices[i] = quadIndicesSource[5] + fullCycle * 4;
-
-		fullCycle += 1;
-	}
-}
-
-void ParticleSystem::Tick(float deltaTime)
-{
-	glm::vec3 scaledQuadSource[4];
-
-	for (int i = 0; i < 4; i++) {
-		scaledQuadSource[i] = quadSource[i] * m_particleSize;
-	}
-
-	//this saps quite a lot from FPS
-	for (int i = 0; i < m_Count; i++) {
+void ParticleSystem::ThreadJob(int start, int end, float deltaTime) {
+	for (int i = start; i < end; i++) {
 		particlePool[i].UpdateParticle(deltaTime);
-		
-		int currCount = i * 4; //for every quad, there are 4 vertexes.
 
-		glm::vec3 currPos = particlePool[i].ReturnPosition();
-		glm::vec4 currCol = particlePool[i].ReturnColor();
-
-		for (int j = 0; j < 4; j++) {
-			quadVertexes[currCount + j].position = currPos + scaledQuadSource[j];
-			quadVertexes[currCount + j].color = currCol;
-		}
+		glm::vec3 pos = particlePool[i].ReturnPosition();
+		posLifetimeArray[i].x = pos.x;
+		posLifetimeArray[i].y = pos.y;
+		posLifetimeArray[i].z = pos.z;
+		posLifetimeArray[i].w = particlePool[i].ReturnLifetime();
 	}
 }
-
-
 
 ParticleSystem::ParticleSystem(unsigned int count, float particleSize)
 :m_Count(count), m_particleSize(particleSize) {
 	
-	quadVertexes = new Vertex[4 * m_Count];
-	quadIndices = new uint32_t[6 * m_Count];
 	particlePool = new Particle[m_Count];
-
-	CreateQuadsFromPositions();
-	CreateIndices();
+	posLifetimeArray = new glm::vec4[m_Count];
 }
 
 ParticleSystem::~ParticleSystem()
 {
-	delete[] quadVertexes;
-	delete[] quadIndices;
 	delete[] particlePool;
-}
-
-void ParticleSystem::ThreadJob(int start, int end, float deltaTime) {
-	glm::vec3 scaledQuadSource[4];
-
-	for (int i = 0; i < 4; i++) {
-		scaledQuadSource[i] = quadSource[i] * m_particleSize;
-	}
-
-	//this saps quite a lot from FPS
-	for (int i = start; i < end; i++) {
-		int currCount = i * 4; //for every quad, there are 4 vertexes.
-		particlePool[i].UpdateParticle(deltaTime);
-
-		glm::vec3 currPos = particlePool[i].ReturnPosition();
-		glm::vec4 currCol = particlePool[i].ReturnColor();
-
-		for (int j = 0; j < 4; j++) {
-			quadVertexes[currCount + j].position = currPos + scaledQuadSource[j];
-			quadVertexes[currCount + j].color = currCol;
-		}
-	}
+	delete[] posLifetimeArray;
 }
 
 
 //////////////////////////////////////RENDERER
 ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
-	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), numThreads(8), pool(numThreads)
+	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), pool(4)
 {
-	particleSystem->CreateQuadsFromPositions();
-	particleSystem->CreateIndices();
-
+	partSystemRef->UpdateParticles(0.0005f);
 	glGenVertexArrays(1, &vertexArray_id);
 	glBindVertexArray(vertexArray_id);
 	//VERTEX BUFFER
 	glGenBuffers(1, &vertexBuffer_id);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(Vertex) * particleSystem->GetCount(), particleSystem->GetQuadVertexes(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3), &quadSource[0], GL_STATIC_DRAW);
 
 	//VERTEX ARRAY
 	//position first
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-	//color
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+	
+	//instanced array creation and supplying the vertex array with it
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3*sizeof(float))); //3 because positions are 3dimensional
+	//created vb
+	glGenBuffers(1, &instancedVertexBuffer_id);
+	glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(float) * partSystemRef->GetCount(), &(partSystemRef->posLifetimeArray[0]), GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0); //0 offset because new vertex buffer
+	glVertexAttribDivisor(1, 1);
 
 	//INDEX BUFFER
 	glGenBuffers(1, &indexBuffer_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * particleSystem->GetCount() * sizeof(unsigned int), particleSystem->GetQuadIndices(), GL_DYNAMIC_DRAW);
-
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(uint32_t), &quadIndicesSource[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	Unbind();
-	threadChunks = partSystemRef->GetCount() / numThreads;
-
 }
 
 ParticleSystemRenderer::~ParticleSystemRenderer()
@@ -166,7 +79,6 @@ ParticleSystemRenderer::~ParticleSystemRenderer()
 	glDeleteBuffers(1, &indexBuffer_id);
 	glDeleteBuffers(1, &vertexBuffer_id);
 	glDeleteVertexArrays(1, &vertexArray_id);
-	pool.stop();
 }
 
 void ParticleSystemRenderer::Bind()
@@ -186,14 +98,11 @@ void ParticleSystemRenderer::Unbind()
 
 void ParticleSystemRenderer::Render(float deltaTime)
 {
-	for (int i = 0; i < numThreads; ++i) {
-		int start = i * threadChunks;
-		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
+	pool.addTask(&ParticleSystem::ThreadJob, partSystemRef);
+	//partSystemRef->UpdateParticles(deltaTime);
+	glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(float) * partSystemRef->GetCount(), &(partSystemRef->posLifetimeArray[0]));
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
 
-		pool.addTask(&ParticleSystem::ThreadJob, partSystemRef, start, end, deltaTime);
-	}
-
-	//partSystemRef->CreateQuadsFromPositions();
-	glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(Vertex) * partSystemRef->GetCount(), partSystemRef->GetQuadVertexes());
-	glDrawElements(GL_TRIANGLES, partSystemRef->GetCount() * 6, GL_UNSIGNED_INT, NULL);
+	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, partSystemRef->GetCount());
 }
