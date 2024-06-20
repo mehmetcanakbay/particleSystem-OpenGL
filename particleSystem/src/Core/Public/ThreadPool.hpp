@@ -1,174 +1,127 @@
-/*
-    Copyright 2016 Daniel Trugman
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+// C++ Program to demonstrate thread pooling 
 
-        http://www.apache.org/licenses/LICENSE-2.0
+#include <condition_variable> 
+#include <functional> 
+#include <iostream> 
+#include <mutex> 
+#include <queue> 
+#include <thread> 
+using namespace std;
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
-
-#ifndef THREAD_POOL_HPP
-#define THREAD_POOL_HPP
-
-#include <deque>
-#include <mutex>
-#include <vector>
-#include <thread>
-#include <future>
-#include <stdexcept>
-#include <functional>
-#include <condition_variable>
-
-// ----------------------------------------------------------------------------
-// Thread pool module decleration
-// ----------------------------------------------------------------------------
-
-class ThreadPool
-{
+// Class that represents a simple thread pool 
+class ThreadPool {
 public:
-    ThreadPool(size_t size)
+    // // Constructor to creates a thread pool with given 
+    // number of threads 
+    ThreadPool(size_t num_threads
+               = thread::hardware_concurrency())
     {
-        try
-        {
-            _shared.run = true;
 
-            for (size_t id = 0; id < size; id++)
-            {
-                _workers.emplace_back(worker, id, std::ref(_shared));
-            }
-        }
-        catch (std::exception& ex)
-        {
-            stop(true);
+        // Creating worker threads 
+        for (size_t i = 0; i < num_threads; ++i) {
+            threads_.emplace_back([this] {
+                while (true) {
+                    function<void()> task;
+                    // The reason for putting the below code 
+                    // here is to unlock the queue before 
+                    // executing the task so that other 
+                    // threads can perform enqueue tasks 
+                    {
+                        // Locking the queue so that data 
+                        // can be shared safely 
+                        unique_lock<mutex> lock(
+                            queue_mutex_);
 
-            throw ex;
+                        // Waiting until there is a task to 
+                        // execute or the pool is stopped 
+                        cv_.wait(lock, [this] {
+                            return !tasks_.empty() || stop_;
+                        });
+
+                        // exit the thread in case the pool 
+                        // is stopped and there are no tasks 
+                        if (stop_ && tasks_.empty()) {
+                            return;
+                        }
+
+                        // Get the next task from the queue 
+                        task = move(tasks_.front());
+                        tasks_.pop();
+                    }
+
+                    task();
+                }
+            });
         }
     }
 
-    virtual ~ThreadPool()
-    {
-        stop(false);
-    }
-
-    void stop(bool immediate = true)
+    // Destructor to stop the thread pool 
+    ~ThreadPool()
     {
         {
-            std::lock_guard<std::mutex> guard(_shared.mutex);
-
-            // Not running, do nothing
-            if (!_shared.run)
-            {
-                return;
-            }
-
-            if (immediate)
-            {
-                _shared.tasks.clear();
-            }
-
-            _shared.run = false;
-            _shared.cond.notify_all();
+            // Lock the queue to update the stop flag safely 
+            unique_lock<mutex> lock(queue_mutex_);
+            stop_ = true;
         }
 
-        for (Worker& w : _workers)
-        {
-            w.join();
+        // Notify all threads 
+        cv_.notify_all();
+
+        // Joining all worker threads to ensure they have 
+        // completed their tasks 
+        for (auto& thread : threads_) {
+            thread.join();
         }
     }
 
-    template < class Func, typename Obj, class... Args >
-    auto addTask(Func&& func, Obj&& obj, Args&&... args)
-        -> std::future<typename std::result_of<Func(Obj&, Args...)>::type>
-    {
-        using result_type = typename std::result_of<Func(Obj&, Args...)>::type;
-
-        std::lock_guard<std::mutex> guard(_shared.mutex);
-
-        if (!_shared.run)
-        {
-            throw std::runtime_error("Can't add tasks when not running");
-        }
-
-        auto task = std::make_shared<std::packaged_task<result_type()>>(std::bind(std::forward<Func>(func), std::ref(obj), std::forward<Args>(args)...));
-        _shared.tasks.emplace_back([task]() { (*task)(); });
-        auto result = task->get_future();
-
-        if (_shared.tasks.size() == 1)
-        {
-            _shared.cond.notify_one();
-        }
-
-        return result;
+    bool is_empty() {
+        return tasks_.empty();
     }
 
-private:
-    typedef std::function<void()> Task;
-    typedef std::deque<Task>      TasksPool;
-    typedef std::thread           Worker;
-    typedef std::vector<Worker>   WorkersPool;
-
-    struct Shared
-    {
-        bool                    run;
-        TasksPool               tasks;
-        std::mutex              mutex;
-        std::condition_variable cond;
-    };
-
-private:
-    static void worker(size_t id, Shared& shared)
-    {
-        // Use a unique lock as we're going to wait on a cond using it
-        std::unique_lock<std::mutex> lock(shared.mutex);
-
-        while (true)
+    void stop() {
         {
-            // Work if there are tasks in the pool
-
-            if (!shared.tasks.empty())
-            {
-                // Get the first task
-
-                Task task = std::move(shared.tasks.front());
-                shared.tasks.pop_front();
-
-                // Do actual work
-                // IMPORTANT! Must NOT hold lock while working
-
-                lock.unlock();
-                task();
-                lock.lock();
-
-                continue;
-            }
-
-            // Stop if required
-
-            if (!shared.run)
-            {
-                // IMPORTANT! Must NOT hold lock after stopped
-
-                lock.unlock();
-                break;
-            }
-
-            // Wait until new tasks are populated or the running state has changed
-
-            shared.cond.wait(lock,
-                [&shared]() { return !shared.run || !shared.tasks.empty(); });
+            // Lock the queue to update the stop flag safely 
+            unique_lock<mutex> lock(queue_mutex_);
+            stop_ = true;
         }
+
+        // Notify all threads 
+        cv_.notify_all();
+
+        // Joining all worker threads to ensure they have 
+        // completed their tasks 
+        for (auto& thread : threads_) {
+            thread.join();
+        }
+    }
+
+    // Enqueue task for execution by the thread pool 
+    void enqueue(function<void()> task)
+    {
+        {
+            unique_lock<std::mutex> lock(queue_mutex_);
+            tasks_.emplace(move(task));
+        }
+        cv_.notify_one();
     }
 
 private:
-    WorkersPool _workers;
-    Shared      _shared;
+    // Vector to store worker threads 
+    vector<thread> threads_;
+
+    // Queue of tasks 
+    queue<function<void()> > tasks_;
+
+    // Mutex to synchronize access to shared data 
+    mutex queue_mutex_;
+
+    // Condition variable to signal changes in the state of 
+    // the tasks queue 
+    condition_variable cv_;
+
+    // Flag to indicate whether the thread pool should stop 
+    // or not 
+    bool stop_ = false;
 };
 
-#endif // THREAD_POOL_HPP

@@ -48,7 +48,8 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
-	ParticleSystem particleSystem(1000000, 0.005f);
+	ParticleSystem particleSystem(3000000, 0.005f);
+	//ParticleSystem particleSystem(10000, 0.005f);
 	ParticleSystemRenderer particleRenderer(&particleSystem);
 	particleRenderer.Bind();
 
@@ -60,6 +61,8 @@ int main() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	float prevFrameTime = -1.0f;
+	float elapsedTime = 0.0f;
+	float deltaTime;
 
 	while (!glfwWindowShouldClose(window)) {
 		if (prevFrameTime == -1.0f) {//if not initialized
@@ -71,13 +74,17 @@ int main() {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+
+
 		float time = (float)glfwGetTime();
-		float deltaTime = time - prevFrameTime;
+		deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
+		elapsedTime += deltaTime;
 		//particleSystem.Tick(deltaTime);
 		//particleSystem.UpdateParticlePositions(deltaTime);
-		particleRenderer.Render(deltaTime);
+		particleRenderer.Render(&deltaTime);
+		while (!particleRenderer.Render(&deltaTime));
 
 		while (GLenum enumout = glGetError()) {
 			std::cout <<"ERROR RENDER: " << enumout << std::endl;
@@ -86,6 +93,7 @@ int main() {
 		{
 			ImGui::Begin("Debug");
 			ImGui::Text("FPS: %.3f, deltaTime: %.6f", (1 / deltaTime), deltaTime);
+			ImGui::Text("Elapsed Time: %.3f", elapsedTime);
 			ImGui::End();
 		}
 

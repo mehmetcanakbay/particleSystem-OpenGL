@@ -9,13 +9,13 @@ void ParticleSystem::UpdateParticles(float deltaTime) {
 		posLifetimeArray[i].x = pos.x;
 		posLifetimeArray[i].y = pos.y;
 		posLifetimeArray[i].z = pos.z;
-		posLifetimeArray[i].w = particlePool[i].ReturnLifetime();
+		posLifetimeArray[i].w = particlePool[i].ReturnAlpha();
 	}
 }
 
-void ParticleSystem::ThreadJob(int start, int end, float deltaTime, float* mappedData) {
+void ParticleSystem::ThreadJob(int start, int end, float* deltaTime, float* mappedData) {
 	for (int i = start; i < end; i++) {
-		particlePool[i].UpdateParticle(deltaTime);
+		particlePool[i].UpdateParticle(*deltaTime);
 
 		glm::vec3 pos = particlePool[i].ReturnPosition();
 		posLifetimeArray[i].x = pos.x;
@@ -28,6 +28,7 @@ void ParticleSystem::ThreadJob(int start, int end, float deltaTime, float* mappe
 		mappedData[i * 4 + 2] = posLifetimeArray[i].z;   // z position
 		mappedData[i * 4 + 3] = posLifetimeArray[i].w;   // lifetime or any additional data
 	}
+	//std::cout << "end!! :" << std::this_thread::get_id() << std::endl;
 }
 
 ParticleSystem::ParticleSystem(unsigned int count, float particleSize)
@@ -46,7 +47,7 @@ ParticleSystem::~ParticleSystem()
 
 //////////////////////////////////////RENDERER
 ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
-	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), numThreads(12), pool(numThreads)
+	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), pool(12)
 {
 	glGenVertexArrays(1, &vertexArray_id);
 	glBindVertexArray(vertexArray_id);
@@ -75,7 +76,7 @@ ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(uint32_t), &quadIndicesSource[0], GL_STATIC_DRAW);
 	Unbind();
 
-	threadChunks = partSystemRef->GetCount() / numThreads;
+	threadChunks = partSystemRef->GetCount() / 12;
 
 	partSystemRef->UpdateParticles(0.0005f);
 
@@ -87,7 +88,7 @@ ParticleSystemRenderer::~ParticleSystemRenderer()
 	glDeleteBuffers(1, &indexBuffer_id);
 	glDeleteBuffers(1, &vertexBuffer_id);
 	glDeleteVertexArrays(1, &vertexArray_id);
-	pool.stop();
+	//pool.stop()k;
 }
 
 void ParticleSystemRenderer::Bind()
@@ -104,21 +105,38 @@ void ParticleSystemRenderer::Unbind()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void ParticleSystemRenderer::SendOrder(int start, int end, float* deltaTimeRef, float* mappedData) {
+	partSystemRef->ThreadJob(start, end, deltaTimeRef, mappedData);
+}
 
-void ParticleSystemRenderer::Render(float deltaTime)
+bool ParticleSystemRenderer::Render(float* deltaTime)
 {
-	glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
-	float* mappedData = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
-	for (int i = 0; i < numThreads; ++i) {
-		int start = i * threadChunks;
-		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
-		pool.addTask(&ParticleSystem::ThreadJob, partSystemRef, start, end, deltaTime, mappedData);
+	frameCount += 1;
+	if (pool.is_empty()) {
+		glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
+		float* mappedData = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+		for (int i = 0; i < 12; ++i) {
+			int start = i * threadChunks;
+			int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
+			pool.enqueue([this, start, end, deltaTime, mappedData] {
+				SendOrder(start, end, deltaTime, mappedData);
+			});	
+		}
+		glUnmapBuffer(GL_ARRAY_BUFFER);
 	}
-	glUnmapBuffer(GL_ARRAY_BUFFER);
+	else {
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
+		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, partSystemRef->GetCount());
+		return false;
+	}
 
-	//partSystemRef->UpdateParticles(deltaTime);
-	//glBufferSubData(GL_ARRAY_BUFFER, 0, 4 * sizeof(float) * partSystemRef->GetCount(), &(partSystemRef->posLifetimeArray[0]));
-
+	//glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
+	//float* mappedData = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+	//partSystemRef->ThreadJob(0, partSystemRef->GetCount(), deltaTime, mappedData);
+	//glUnmapBuffer(GL_ARRAY_BUFFER);
+	//
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
 	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, partSystemRef->GetCount());
+	return true;
+
 }

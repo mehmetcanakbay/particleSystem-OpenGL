@@ -20,7 +20,7 @@ public:
 	void UpdateParticles(float deltaTime);
 	glm::vec4* posLifetimeArray;
 
-	void ThreadJob(int start, int end, float deltaTime, float* mappedData);
+	void ThreadJob(int start, int end, float* deltaTime, float* mappedData);
 };
 
 class ParticleSystemRenderer {
@@ -51,6 +51,12 @@ private:
 		0, 1, 2, 2, 3, 0
 	};
 
+	//debug variables
+	unsigned int frameCount = 0;
+	unsigned int skippedCount = 0;
+
+private:
+	void SendOrder(int start, int end, float* deltaTimeRef, float* mappedData);
 public:
 	ParticleSystemRenderer(ParticleSystem* particleSystem);
 	~ParticleSystemRenderer();
@@ -58,5 +64,6 @@ public:
 	void Bind();
 	void Unbind();
 
-	void Render(float deltaTime);
+
+	bool Render(float* deltaTime);
 };
