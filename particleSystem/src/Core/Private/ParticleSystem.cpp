@@ -14,11 +14,11 @@ void ParticleSystem::UpdateParticles(float deltaTime) {
 }
 
 
-void ParticleSystem::ThreadJob(int start, int end, float* deltaTime, float* mappedData) {
+void ParticleSystem::ThreadJob(int start, int end, float deltaTime, float* mappedData) {
 	for (int i = start; i < end; i++) {
 		Particle* particle = &particlePool[i];
 		if (particle->ReturnLifetime() <= 0.0f) continue;
-		particle->UpdateParticle(*deltaTime);
+		particle->UpdateParticle(deltaTime);
 
 		glm::vec3 pos = particle->ReturnPosition();
 		mappedData[i * 4] = pos.x;
@@ -107,11 +107,11 @@ void ParticleSystemRenderer::Unbind()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void ParticleSystemRenderer::SendOrder(int start, int end, float* deltaTimeRef, float* mappedData) {
+void ParticleSystemRenderer::SendOrder(int start, int end, float deltaTimeRef, float* mappedData) {
 	partSystemRef->ThreadJob(start, end, deltaTimeRef, mappedData);
 }
 
-bool ParticleSystemRenderer::Render(float* deltaTime)
+bool ParticleSystemRenderer::Render(float deltaTime)
 {
 	frameCount += 1;
 

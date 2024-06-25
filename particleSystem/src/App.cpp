@@ -83,7 +83,7 @@ int main() {
 		elapsedTime += deltaTime;
 		//particleSystem.Tick(deltaTime);
 		//particleSystem.UpdateParticlePositions(deltaTime);
-		particleRenderer.Render(&deltaTime);
+		particleRenderer.Render(deltaTime);
 		//while (!particleRenderer.Render(&deltaTime));
 
 		while (GLenum enumout = glGetError()) {

@@ -24,7 +24,7 @@ public:
 	std::atomic<unsigned int> finishedThreadCount = 8;
 
 
-	void ThreadJob(int start, int end, float* deltaTime, float* mappedData);
+	void ThreadJob(int start, int end, float deltaTime, float* mappedData);
 
 };
 
@@ -62,7 +62,7 @@ private:
 
 
 private:
-	void SendOrder(int start, int end, float* deltaTimeRef, float* mappedData);
+	void SendOrder(int start, int end, float deltaTimeRef, float* mappedData);
 public:
 	ParticleSystemRenderer(ParticleSystem* particleSystem);
 	~ParticleSystemRenderer();
@@ -71,5 +71,5 @@ public:
 	void Unbind();
 
 
-	bool Render(float* deltaTime);
+	bool Render(float deltaTime);
 };
