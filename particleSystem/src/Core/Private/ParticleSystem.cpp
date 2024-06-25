@@ -13,21 +13,23 @@ void ParticleSystem::UpdateParticles(float deltaTime) {
 	}
 }
 
+
 void ParticleSystem::ThreadJob(int start, int end, float* deltaTime, float* mappedData) {
 	for (int i = start; i < end; i++) {
-		particlePool[i].UpdateParticle(*deltaTime);
+		Particle* particle = &particlePool[i];
+		if (particle->ReturnLifetime() <= 0.0f) continue;
+		particle->UpdateParticle(*deltaTime);
 
-		glm::vec3 pos = particlePool[i].ReturnPosition();
-		posLifetimeArray[i].x = pos.x;
-		posLifetimeArray[i].y = pos.y;
-		posLifetimeArray[i].z = pos.z;
-		posLifetimeArray[i].w = particlePool[i].ReturnAlpha();
-
-		mappedData[i * 4] = posLifetimeArray[i].x;       // x position
-		mappedData[i * 4 + 1] = posLifetimeArray[i].y;   // y position
-		mappedData[i * 4 + 2] = posLifetimeArray[i].z;   // z position
-		mappedData[i * 4 + 3] = posLifetimeArray[i].w;   // lifetime or any additional data
+		glm::vec3 pos = particle->ReturnPosition();
+		mappedData[i * 4] = pos.x;
+		mappedData[i * 4 + 1] = pos.y;
+		mappedData[i * 4 + 2] = pos.z;
+		mappedData[i * 4 + 3] = particle->ReturnAlpha();
+		//if (i % 10000 == 0)
+		//	std::cout << "Thread id: " << std::this_thread::get_id() << " i = " << i <<" delta time: "<<*deltaTime<< std::endl;
 	}
+
+	finishedThreadCount += 1;
 	//std::cout << "end!! :" << std::this_thread::get_id() << std::endl;
 }
 
@@ -35,7 +37,6 @@ ParticleSystem::ParticleSystem(unsigned int count, float particleSize)
 :m_Count(count), m_particleSize(particleSize) {
 	
 	particlePool = new Particle[m_Count];
-	posLifetimeArray = new glm::vec4[m_Count];
 }
 
 ParticleSystem::~ParticleSystem()
@@ -47,7 +48,7 @@ ParticleSystem::~ParticleSystem()
 
 //////////////////////////////////////RENDERER
 ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
-	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), pool(12)
+	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), numThreads(4), pool(numThreads)
 {
 	glGenVertexArrays(1, &vertexArray_id);
 	glBindVertexArray(vertexArray_id);
@@ -76,9 +77,10 @@ ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(uint32_t), &quadIndicesSource[0], GL_STATIC_DRAW);
 	Unbind();
 
-	threadChunks = partSystemRef->GetCount() / 12;
+	threadChunks = partSystemRef->GetCount() / numThreads;
+	partSystemRef->finishedThreadCount = 0;
 
-	partSystemRef->UpdateParticles(0.0005f);
+	//partSystemRef->UpdateParticles(0.0005f);
 
 }
 
@@ -88,7 +90,7 @@ ParticleSystemRenderer::~ParticleSystemRenderer()
 	glDeleteBuffers(1, &indexBuffer_id);
 	glDeleteBuffers(1, &vertexBuffer_id);
 	glDeleteVertexArrays(1, &vertexArray_id);
-	//pool.stop()k;
+	//pool.stop();
 }
 
 void ParticleSystemRenderer::Bind()
@@ -112,29 +114,21 @@ void ParticleSystemRenderer::SendOrder(int start, int end, float* deltaTimeRef, 
 bool ParticleSystemRenderer::Render(float* deltaTime)
 {
 	frameCount += 1;
-	if (pool.is_empty()) {
-		glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
-		float* mappedData = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
-		for (int i = 0; i < 12; ++i) {
-			int start = i * threadChunks;
-			int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
-			pool.enqueue([this, start, end, deltaTime, mappedData] {
-				SendOrder(start, end, deltaTime, mappedData);
-			});	
-		}
-		glUnmapBuffer(GL_ARRAY_BUFFER);
-	}
-	else {
-		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
-		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, partSystemRef->GetCount());
-		return false;
-	}
 
-	//glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
-	//float* mappedData = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
-	//partSystemRef->ThreadJob(0, partSystemRef->GetCount(), deltaTime, mappedData);
-	//glUnmapBuffer(GL_ARRAY_BUFFER);
-	//
+	glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
+	float* mappedData = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	for (int i = 0; i < numThreads; ++i) {
+		int start = i * threadChunks;
+		int end = (i == numThreads - 1) ? partSystemRef->GetCount() : (i + 1) * threadChunks;
+		pool.enqueue([this, start, end, deltaTime, mappedData] {
+			SendOrder(start, end, deltaTime, mappedData);
+		});	
+	}
+	while (partSystemRef->finishedThreadCount < numThreads);
+	partSystemRef->finishedThreadCount = 0;
+	//std::cout << "UNMAPPING BUFFER" << std::endl;
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
 	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, partSystemRef->GetCount());
 	return true;

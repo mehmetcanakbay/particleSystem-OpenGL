@@ -48,7 +48,7 @@ int main() {
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
-	ParticleSystem particleSystem(3000000, 0.005f);
+	ParticleSystem particleSystem(1000000, 0.005f);
 	//ParticleSystem particleSystem(10000, 0.005f);
 	ParticleSystemRenderer particleRenderer(&particleSystem);
 	particleRenderer.Bind();
@@ -84,7 +84,7 @@ int main() {
 		//particleSystem.Tick(deltaTime);
 		//particleSystem.UpdateParticlePositions(deltaTime);
 		particleRenderer.Render(&deltaTime);
-		while (!particleRenderer.Render(&deltaTime));
+		//while (!particleRenderer.Render(&deltaTime));
 
 		while (GLenum enumout = glGetError()) {
 			std::cout <<"ERROR RENDER: " << enumout << std::endl;

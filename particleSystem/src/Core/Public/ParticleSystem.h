@@ -12,6 +12,8 @@ private:
 
 	Particle* particlePool;
 
+
+
 public:
 	ParticleSystem(unsigned int count, float particleSize);
 	~ParticleSystem();
@@ -19,8 +21,11 @@ public:
 	inline unsigned int GetCount() const { return m_Count; }
 	void UpdateParticles(float deltaTime);
 	glm::vec4* posLifetimeArray;
+	std::atomic<unsigned int> finishedThreadCount = 8;
+
 
 	void ThreadJob(int start, int end, float* deltaTime, float* mappedData);
+
 };
 
 class ParticleSystemRenderer {
@@ -54,6 +59,7 @@ private:
 	//debug variables
 	unsigned int frameCount = 0;
 	unsigned int skippedCount = 0;
+
 
 private:
 	void SendOrder(int start, int end, float* deltaTimeRef, float* mappedData);

@@ -75,10 +75,6 @@ public:
         }
     }
 
-    bool is_empty() {
-        return tasks_.empty();
-    }
-
     void stop() {
         {
             // Lock the queue to update the stop flag safely 
