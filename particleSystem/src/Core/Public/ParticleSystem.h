@@ -24,8 +24,7 @@ public:
 	void ThreadJob(int start, int end, float deltaTime, float* mappedData);
 
 public:
-	glm::vec4* posLifetimeArray;
-	std::atomic<unsigned int> finishedThreadCount = 8;
+	std::atomic<unsigned int> finishedThreadCount = 0;
 };
 
 class ParticleSystemRenderer {

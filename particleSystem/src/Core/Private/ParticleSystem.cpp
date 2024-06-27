@@ -1,19 +1,6 @@
 #include "Public/ParticleSystem.h"
 #include <iostream>
 
-void ParticleSystem::UpdateParticles(float deltaTime) {
-	for (int i = 0; i < m_Count; i++) {
-		particlePool[i].UpdateParticle(deltaTime);
-
-		glm::vec3 pos = particlePool[i].ReturnPosition();
-		posLifetimeArray[i].x = pos.x;
-		posLifetimeArray[i].y = pos.y;
-		posLifetimeArray[i].z = pos.z;
-		posLifetimeArray[i].w = particlePool[i].ReturnAlpha();
-	}
-}
-
-
 void ParticleSystem::ThreadJob(int start, int end, float deltaTime, float* mappedData) {
 	for (int i = start; i < end; i++) {
 		Particle* particle = &particlePool[i];
@@ -53,7 +40,6 @@ void ParticleSystem::Initialize(unsigned int count, float particleSize) {
 ParticleSystem::~ParticleSystem()
 {
 	delete[] particlePool;
-	delete[] posLifetimeArray;
 }
 
 
