@@ -39,6 +39,12 @@ ParticleSystem::ParticleSystem(unsigned int count, float particleSize)
 	particlePool = new Particle[m_Count];
 }
 
+void ParticleSystem::Initialize(unsigned int count, float particleSize) {
+	m_Count = count;
+	m_particleSize = particleSize;
+	particlePool = new Particle[m_Count];
+}
+
 ParticleSystem::~ParticleSystem()
 {
 	delete[] particlePool;
@@ -50,38 +56,24 @@ ParticleSystem::~ParticleSystem()
 ParticleSystemRenderer::ParticleSystemRenderer(ParticleSystem* particleSystem) :
 	vertexBuffer_id(0), vertexArray_id(0), indexBuffer_id(0), partSystemRef(particleSystem), numThreads(4), pool(numThreads)
 {
-	glGenVertexArrays(1, &vertexArray_id);
-	glBindVertexArray(vertexArray_id);
-	//VERTEX BUFFER
-	glGenBuffers(1, &vertexBuffer_id);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3), &quadSource[0], GL_STATIC_DRAW);
+	CreateBuffers();
+	threadChunks = partSystemRef->GetCount() / numThreads;
+	partSystemRef->finishedThreadCount = 0;
+}
 
-	//VERTEX ARRAY
-	//position first
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
-	
-	//instanced array creation and supplying the vertex array with it
-	glEnableVertexAttribArray(1);
-	//created vb
-	glGenBuffers(1, &instancedVertexBuffer_id);
-	glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(float) * partSystemRef->GetCount(), &(partSystemRef->posLifetimeArray[0]), GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0); //0 offset because new vertex buffer
-	glVertexAttribDivisor(1, 1);
+void ParticleSystemRenderer::Initialize(ParticleSystem* particleSystem, int numberOfThreads) {
 
-	//INDEX BUFFER
-	glGenBuffers(1, &indexBuffer_id);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer_id);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(uint32_t), &quadIndicesSource[0], GL_STATIC_DRAW);
-	Unbind();
+	vertexBuffer_id = 0;
+	vertexArray_id = 0;
+	indexBuffer_id = 0;
+	partSystemRef = particleSystem;
+	numThreads = numberOfThreads;
+	pool.InitializePool(numThreads);
+
+	CreateBuffers();
 
 	threadChunks = partSystemRef->GetCount() / numThreads;
 	partSystemRef->finishedThreadCount = 0;
-
-	//partSystemRef->UpdateParticles(0.0005f);
-
 }
 
 ParticleSystemRenderer::~ParticleSystemRenderer()
@@ -109,6 +101,36 @@ void ParticleSystemRenderer::Unbind()
 
 void ParticleSystemRenderer::SendOrder(int start, int end, float deltaTimeRef, float* mappedData) {
 	partSystemRef->ThreadJob(start, end, deltaTimeRef, mappedData);
+}
+
+void ParticleSystemRenderer::CreateBuffers()
+{
+	glGenVertexArrays(1, &vertexArray_id);
+	glBindVertexArray(vertexArray_id);
+	//VERTEX BUFFER
+	glGenBuffers(1, &vertexBuffer_id);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec3), &quadSource[0], GL_STATIC_DRAW);
+
+	//VERTEX ARRAY
+	//position first
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	//instanced array creation and supplying the vertex array with it
+	glEnableVertexAttribArray(1);
+	//created vb
+	glGenBuffers(1, &instancedVertexBuffer_id);
+	glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
+	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(float) * partSystemRef->GetCount(), &(partSystemRef->posLifetimeArray[0]), GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0); //0 offset because new vertex buffer
+	glVertexAttribDivisor(1, 1);
+
+	//INDEX BUFFER
+	glGenBuffers(1, &indexBuffer_id);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer_id);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(uint32_t), &quadIndicesSource[0], GL_STATIC_DRAW);
+	Unbind();
 }
 
 bool ParticleSystemRenderer::Render(float deltaTime)

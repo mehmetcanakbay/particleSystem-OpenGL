@@ -1,7 +1,10 @@
 #pragma once
 
 class Layer {
-	virtual void OnInit();
-	virtual void OnTick(float deltaTime);
+public:
+	virtual void OnInit() {};
+	virtual void OnTick(float deltaTime) {};
 
+	virtual void OnFinish() {};
+	virtual void OnImGuiRender() {};
 };

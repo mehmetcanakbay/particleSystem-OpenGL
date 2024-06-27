@@ -945,6 +945,9 @@
     <ClInclude Include="src\Core\Public\Layer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Public\ParticleLayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\App.cpp">
@@ -989,7 +992,7 @@
     <ClCompile Include="src\Core\Private\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Private\Layer.cpp">
+    <ClCompile Include="src\Core\Private\ParticleLayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

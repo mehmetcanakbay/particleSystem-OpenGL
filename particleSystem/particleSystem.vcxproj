@@ -142,6 +142,7 @@
     <ClInclude Include="include\GL\wglew.h" />
     <ClInclude Include="src\Core\Public\Layer.h" />
     <ClInclude Include="src\Core\Public\Particle.h" />
+    <ClInclude Include="src\Core\Public\ParticleLayer.h" />
     <ClInclude Include="src\Core\Public\ParticleSystem.h" />
     <ClInclude Include="src\Core\Public\Renderer.h" />
     <ClInclude Include="src\Core\Public\Shader.h" />
@@ -447,8 +448,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\App.cpp" />
-    <ClCompile Include="src\Core\Private\Layer.cpp" />
     <ClCompile Include="src\Core\Private\Particle.cpp" />
+    <ClCompile Include="src\Core\Private\ParticleLayer.cpp" />
     <ClCompile Include="src\Core\Private\Renderer.cpp" />
     <ClCompile Include="src\Core\Private\Shader.cpp" />
     <ClCompile Include="src\Core\Private\Vertex.cpp" />

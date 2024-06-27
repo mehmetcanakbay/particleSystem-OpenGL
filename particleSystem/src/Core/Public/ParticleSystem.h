@@ -12,10 +12,11 @@ private:
 
 	Particle* particlePool;
 
-
-
 public:
 	ParticleSystem(unsigned int count, float particleSize);
+	ParticleSystem() {};
+	void Initialize(unsigned int count, float particleSize);
+
 	~ParticleSystem();
 
 	inline unsigned int GetCount() const { return m_Count; }
@@ -63,8 +64,11 @@ private:
 
 private:
 	void SendOrder(int start, int end, float deltaTimeRef, float* mappedData);
+	void CreateBuffers();
 public:
 	ParticleSystemRenderer(ParticleSystem* particleSystem);
+	ParticleSystemRenderer() {};
+	void Initialize(ParticleSystem* particleSystem, int numberOfThreads=4);
 	~ParticleSystemRenderer();
 
 	void Bind();

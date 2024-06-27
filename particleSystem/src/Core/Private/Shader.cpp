@@ -81,6 +81,12 @@ Shader::Shader(const std::string& shaderFilePath)
 	shader_id = CompileShader(source);
 }
 
+Shader::Shader() {
+
+}
+
+
+
 void Shader::Bind()
 {
 	glUseProgram(shader_id);
@@ -93,4 +99,9 @@ void Shader::Unbind()
 
 Shader::~Shader() {
 	glDeleteProgram(shader_id);
+}
+
+void Shader::Initialize(const std::string& shaderFilePath) {
+	source = ParseShader(shaderFilePath);
+	shader_id = CompileShader(source);
 }
