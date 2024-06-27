@@ -2,7 +2,7 @@
 
 Most implementations on GitHub use shaders or compute shaders to move particles. In this implementation I went for a different approach and moved particles using a thread pool.
 
-<video src='media/sample.mp4' width=480></video>
+https://github.com/mehmetcanakbay/particleSystem-OpenGL/assets/73856544/5fe06511-cf6e-499c-a3cc-1781297d9d2d
 
 ## Implementation Details
 
