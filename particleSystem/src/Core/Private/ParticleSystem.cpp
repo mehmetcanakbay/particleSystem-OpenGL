@@ -21,10 +21,15 @@ void ParticleSystem::ThreadJob(int start, int end, float deltaTime, float* mappe
 		particle->UpdateParticle(deltaTime);
 
 		glm::vec3 pos = particle->ReturnPosition();
-		mappedData[i * 4] = pos.x;
-		mappedData[i * 4 + 1] = pos.y;
-		mappedData[i * 4 + 2] = pos.z;
-		mappedData[i * 4 + 3] = particle->ReturnAlpha();
+		glm::vec4 color = particle->ReturnColor();
+		mappedData[i * 7] = pos.x;
+		mappedData[i * 7 + 1] = pos.y;
+		mappedData[i * 7 + 2] = pos.z;
+		
+		mappedData[i * 7 + 3] = color.r;
+		mappedData[i * 7 + 4] = color.g;
+		mappedData[i * 7 + 5] = color.b;
+		mappedData[i * 7 + 6] = particle->ReturnAlpha();
 		//if (i % 10000 == 0)
 		//	std::cout << "Thread id: " << std::this_thread::get_id() << " i = " << i <<" delta time: "<<*deltaTime<< std::endl;
 	}
@@ -119,12 +124,16 @@ void ParticleSystemRenderer::CreateBuffers()
 
 	//instanced array creation and supplying the vertex array with it
 	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 	//created vb
 	glGenBuffers(1, &instancedVertexBuffer_id);
 	glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
-	glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(float) * partSystemRef->GetCount(), &(partSystemRef->posLifetimeArray[0]), GL_DYNAMIC_DRAW);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0); //0 offset because new vertex buffer
+	glBufferData(GL_ARRAY_BUFFER, 7 * sizeof(float) * partSystemRef->GetCount(), nullptr, GL_DYNAMIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0); //0 offset because new vertex buffer
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3*sizeof(float))); //0 offset because new vertex buffer
+
 	glVertexAttribDivisor(1, 1);
+	glVertexAttribDivisor(2, 1);
 
 	//INDEX BUFFER
 	glGenBuffers(1, &indexBuffer_id);
