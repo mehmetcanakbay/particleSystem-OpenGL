@@ -16,7 +16,7 @@ private:
 	unsigned int CompileShader(ShaderSourceHolder& source);
 public:
 	Shader(const std::string& shaderFilePath);
-	Shader();
+	Shader() {};
 	~Shader();
 
 	void Initialize(const std::string& shaderFilePath);

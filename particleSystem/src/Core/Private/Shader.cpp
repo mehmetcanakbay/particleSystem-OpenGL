@@ -50,24 +50,28 @@ unsigned int Shader::CompileShader(ShaderSourceHolder& source)
 	glAttachShader(program, frag_id);
 	glLinkProgram(program);
 	glValidateProgram(program);
+
 	glDeleteShader(vertex_id);
 	glDeleteShader(frag_id);
 
+	//Shader error here
 	GLint linked;
 	glGetProgramiv(program, GL_LINK_STATUS, &linked);
+
+	//TODO:
+	//Create a proper shader error handler
 	if (!linked) {
-		std::cout << "Not linkedd" << std::endl;
-		GLint infoLen = 0;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLen);
-		if (infoLen > 1) {
-			char infoLog[500];
-			glGetProgramInfoLog(program, infoLen, nullptr, infoLog);
-			std::cout << infoLog<<std::endl;
-			// Handle shader compilation or linking errors here
-		}
-		// Delete shader program if not linked successfully
-		glDeleteProgram(program);
-		program = 0; // Set to 0 or an invalid ID
+		std::cout << "Not linked!" << std::endl;
+
+		//int length;
+		//glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+		//char* message = (char*)alloca(length * sizeof(char));
+		//glGetProgramInfoLog(program, length, &length, message);
+		//std::cout << "Failed to compile shader... -->" << " " << std::endl;
+		//std::cout << message << std::endl;
+
+		//glDeleteProgram(program);
+		//program = 0; 
 	}
 
 	glUseProgram(0);
@@ -80,12 +84,6 @@ Shader::Shader(const std::string& shaderFilePath)
 	source = ParseShader(shaderFilePath);
 	shader_id = CompileShader(source);
 }
-
-Shader::Shader() {
-
-}
-
-
 
 void Shader::Bind()
 {

@@ -137,7 +137,9 @@ bool ParticleSystemRenderer::Render(float deltaTime)
 {
 	frameCount += 1;
 
+	//bind the instanced vertex buffer so we can manipulate that one
 	glBindBuffer(GL_ARRAY_BUFFER, instancedVertexBuffer_id);
+	//get the mapped data and then divide the amount of particles, then send them to the thread pool
 	float* mappedData = (float*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 	for (int i = 0; i < numThreads; ++i) {
 		int start = i * threadChunks;
@@ -146,13 +148,14 @@ bool ParticleSystemRenderer::Render(float deltaTime)
 			SendOrder(start, end, deltaTime, mappedData);
 		});	
 	}
+	//wait until task finishes
 	while (partSystemRef->finishedThreadCount < numThreads);
 	partSystemRef->finishedThreadCount = 0;
 	//std::cout << "UNMAPPING BUFFER" << std::endl;
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 
+	//draw
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer_id);
 	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, partSystemRef->GetCount());
 	return true;
-
 }

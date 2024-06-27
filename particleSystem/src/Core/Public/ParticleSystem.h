@@ -21,12 +21,11 @@ public:
 
 	inline unsigned int GetCount() const { return m_Count; }
 	void UpdateParticles(float deltaTime);
-	glm::vec4* posLifetimeArray;
-	std::atomic<unsigned int> finishedThreadCount = 8;
-
-
 	void ThreadJob(int start, int end, float deltaTime, float* mappedData);
 
+public:
+	glm::vec4* posLifetimeArray;
+	std::atomic<unsigned int> finishedThreadCount = 8;
 };
 
 class ParticleSystemRenderer {
@@ -38,7 +37,6 @@ private:
 
 	unsigned int instancedVertexBuffer_id;
 
-	
 	unsigned int numThreads;
 	unsigned int threadChunks;
 	ThreadPool pool;
